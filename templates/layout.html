@@ -7,6 +7,10 @@
     <meta name="robots" content="noindex">
     <title>{% block title %}pagebin{% endblock %}</title>
     <link rel="stylesheet" href="{% block stylesheet_url %}/static/app.css{% endblock %}">
+    {% block icons %}
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="apple-touch-icon" href="/static/favicon.png">
+    {% endblock %}
     {% block scripts %}{% endblock %}
   </head>
   <body class="font-sans text-sm min-h-screen bg-base-100 text-base-content">

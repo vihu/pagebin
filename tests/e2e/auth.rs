@@ -296,6 +296,7 @@ async fn auth_routes_and_assets_are_admin_host_only() {
         "/login",
         "/logout",
         "/static/app.css",
+        "/static/favicon.png",
         "/static/fonts/AtkinsonHyperlegibleNext-Regular.woff2",
     ] {
         for host in [VIEW_HOST, "unknown.local"] {
@@ -313,6 +314,13 @@ async fn auth_routes_and_assets_are_admin_host_only() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(headers[CONTENT_TYPE], "text/css; charset=utf-8");
     assert_eq!(body, include_str!("../../static/app.css"));
+    let icon = app
+        .clone()
+        .oneshot(get("/static/favicon.png", ""))
+        .await
+        .unwrap();
+    assert_eq!(icon.status(), StatusCode::OK);
+    assert_eq!(icon.headers()[CONTENT_TYPE], "image/png");
     pool.close().await;
 }
 
