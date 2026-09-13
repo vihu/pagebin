@@ -6,8 +6,9 @@ a link on a separate viewer host, open or password-protected.
 ## Run
 
 ```sh
+curl -fsSLO "https://raw.githubusercontent.com/vihu/pagebin/main/{docker-compose.yml,env.example}"
 cp env.example .env   # set PAGEBIN_ADMIN_PASSWORD; the rest works locally as is
-docker compose up -d --build
+docker compose up -d
 open http://localhost:5050/login
 ```
 

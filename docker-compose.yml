@@ -1,6 +1,7 @@
 services:
   pagebin:
-    build: .
+    image: ghcr.io/vihu/pagebin:0
+    # build: .   # contributors: uncomment, then `docker compose up -d --build`
     restart: unless-stopped
     env_file: .env
     ports:
