@@ -56,9 +56,12 @@ Set `PAGEBIN_PUBLIC_URL=https://view.example.com`. Never serve uploaded HTML on 
 
 Set `PAGEBIN_API_TOKEN` to enable `/api/sites` on the admin host.
 
+For publishing from pi or Claude Code, install the [Pagebin skill](skills/pagebin/SKILL.md#install-once).
+It bundles an uploader for HTML files and static-site directories; credentials stay local.
+
 ```sh
 curl -sS -H "Authorization: Bearer $PAGEBIN_API_TOKEN" \
-  -F html=@index.html -F title="Release notes" -F expires_in=7d \
+  -F 'html=<index.html' -F title="Release notes" -F expires_in=7d \
   https://pages.example.com/api/sites
 ```
 
