@@ -78,9 +78,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
   --depth: 0;
   --noise: 0;
 }
+@font-face { font-family: "Atkinson Hyperlegible Next"; font-weight: 400; font-display: swap; src: url("fonts/AtkinsonHyperlegibleNext-Regular.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible Next"; font-weight: 600; font-display: swap; src: url("fonts/AtkinsonHyperlegibleNext-SemiBold.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible Next"; font-weight: 700; font-display: swap; src: url("fonts/AtkinsonHyperlegibleNext-Bold.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible Mono"; font-weight: 400; font-display: swap; src: url("fonts/AtkinsonHyperlegibleMono-Regular.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible Mono"; font-weight: 500; font-display: swap; src: url("fonts/AtkinsonHyperlegibleMono-Medium.woff2") format("woff2"); }
 @theme {
-  --font-mono:
-    "Iosevka", "JetBrains Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --font-sans: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, Menlo, monospace;
 }
 @source "../templates";
 :root {
@@ -101,6 +106,46 @@ h1,
 h2 {
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+h1 {
+  font-size: 1.125rem;
+}
+h2 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.meta-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9ch, max-content));
+  gap: 0 2rem;
+  margin: 1.25rem 0 0;
+}
+.meta-strip div {
+  padding-left: 1rem;
+  border-left: 1px solid var(--color-base-300);
+}
+.meta-strip div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.meta-strip dt {
+  font-size: 0.875rem;
+}
+.meta-strip dd {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+.split {
+  display: grid;
+  gap: 1.5rem;
+}
+@media (min-width: 40rem) {
+  .split {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+  .split.settings {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  }
 }
 .intro,
 .form-error {

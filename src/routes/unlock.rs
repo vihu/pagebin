@@ -26,6 +26,7 @@ pub(super) fn router(state: ViewerState) -> Router {
     Router::new()
         .route("/s/{slug}/__unlock", get(page).post(submit))
         .route("/s/{slug}/__unlock/app.css", get(stylesheet))
+        .route("/s/{slug}/__unlock/fonts/{name}", get(font))
         .layer(DefaultBodyLimit::max(super::FORM_BODY_BYTES))
         .with_state(state)
 }
@@ -70,12 +71,29 @@ async fn page(
 /// Serves embedded styles without consulting the uploaded site directory.
 ///
 /// # Errors
-/// Returns safe storage or clock failures.
+/// Serves the embedded stylesheet only for a live password site.
 async fn stylesheet(
     State(state): State<ViewerState>,
     Path(raw_slug): Path<String>,
 ) -> Result<Response> {
-    let Ok(slug) = Slug::parse(&raw_slug) else {
+    let stylesheet = (
+        [(CONTENT_TYPE, "text/css; charset=utf-8")],
+        include_str!("../../static/app.css"),
+    );
+    asset(&state, &raw_slug, stylesheet.into_response()).await
+}
+
+/// Serves one embedded font only for a live password site.
+async fn font(
+    State(state): State<ViewerState>,
+    Path((raw_slug, name)): Path<(String, String)>,
+) -> Result<Response> {
+    asset(&state, &raw_slug, admin::font_response(&name)).await
+}
+
+/// Gates a trusted asset behind the same checks as the unlock page.
+async fn asset(state: &ViewerState, raw_slug: &str, response: Response) -> Result<Response> {
+    let Ok(slug) = Slug::parse(raw_slug) else {
         return Ok(StatusCode::NOT_FOUND.into_response());
     };
     let Some(access) = state.sites.access(&slug).await? else {
@@ -84,13 +102,7 @@ async fn stylesheet(
     if !view::available(&access.site)? || access.password.is_none() {
         return Ok(StatusCode::NOT_FOUND.into_response());
     }
-    Ok(ViewerUi::mark(
-        (
-            [(CONTENT_TYPE, "text/css; charset=utf-8")],
-            include_str!("../../static/app.css"),
-        )
-            .into_response(),
-    ))
+    Ok(ViewerUi::mark(response))
 }
 
 /// Verifies the complete native form before checking a bounded password job.

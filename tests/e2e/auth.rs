@@ -291,7 +291,13 @@ async fn auth_cookies_reject_unsigned_unknown_duplicate_and_encoded_names() {
 #[tokio::test]
 async fn auth_routes_and_assets_are_admin_host_only() {
     let (app, pool, _directory) = spawn_app(Some(VIEW_HOST)).await;
-    for path in ["/", "/login", "/logout", "/static/app.css"] {
+    for path in [
+        "/",
+        "/login",
+        "/logout",
+        "/static/app.css",
+        "/static/fonts/AtkinsonHyperlegibleNext-Regular.woff2",
+    ] {
         for host in [VIEW_HOST, "unknown.local"] {
             let mut request = get(path, "");
             request.headers_mut().insert(HOST, host.parse().unwrap());

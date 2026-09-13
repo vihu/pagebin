@@ -11,7 +11,7 @@
 <div class="flex flex-wrap items-end justify-between gap-4 mt-8 mb-4">
   <div>
     <h1>pages <span class="hint font-normal">{{ sites.len() }}{% if previous_url.is_some() || next_url.is_some() %} shown{% endif %}</span></h1>
-    <p class="hint">Only you can see this list. Share the links, not this page.</p>
+    <p class="hint">Only you can see this list.</p>
   </div>
   <a class="btn btn-primary btn-sm" href="/new">new page</a>
 </div>
@@ -46,11 +46,11 @@
     <tr class="hover:bg-base-200" data-copy-link>
       <td>
         <div class="flex items-center gap-1">
-          <a class="font-bold link link-hover library-title" href="{{ site.url }}" target="_blank" rel="noopener">{% if site.title.is_empty() %}{{ site.slug }}{% else %}{{ site.title }}{% endif %}</a>
+          <a class="font-bold font-mono link link-hover library-title" href="{{ site.url }}" target="_blank" rel="noopener">{% if site.title.is_empty() %}{{ site.slug }}{% else %}{{ site.title }}{% endif %}</a>
           <a class="btn btn-ghost btn-xs btn-square shrink-0 hint" href="/sites/{{ site.slug }}" aria-label="Settings for {{ site.slug }}">{% call icons::settings() %}{% endcall %}</a>
         </div>
         <div class="flex items-center gap-1 hint">
-          <a class="link link-hover truncate min-w-0" data-share-url href="{{ site.url }}" title="{{ site.url }}">{{ site.url }}</a>
+          <a class="link link-hover truncate min-w-0 font-mono" data-share-url href="{{ site.url }}" title="{{ site.url }}">{{ site.url }}</a>
           <button class="btn btn-ghost btn-xs btn-square shrink-0" type="button" data-copy-button hidden aria-label="Copy share link for {{ site.slug }}">{% call icons::copy() %}{% endcall %}</button>
         </div>
         <p class="intro" data-copy-status role="status" aria-live="polite" aria-atomic="true"></p>
@@ -70,8 +70,6 @@
     {% endfor %}
   </tbody>
 </table>
-<p class="hint mt-3">Title opens the page. Gear opens its settings. Clipboard copies the link.</p>
-<p class="hint text-xs mt-1">Sizes use 1024-byte units. Dates are UTC; full metadata is in settings.</p>
 {% endif %}
 {% if previous_url.is_some() || next_url.is_some() %}
 <nav class="flex flex-wrap gap-3 mt-6" aria-label="Site pages">

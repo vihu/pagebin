@@ -14,7 +14,7 @@
     <div class="grid grid-cols-[4ch_minmax(0,1fr)]">
       <div class="border-r border-base-300 select-none" aria-hidden="true"></div>
     <textarea
-      class="textarea textarea-ghost w-full min-w-0 min-h-88 leading-6 py-3 px-3 rounded-none focus:outline-offset-[-2px]"
+      class="textarea textarea-ghost font-mono w-full min-w-0 min-h-72 leading-6 py-3 px-3 rounded-none focus:outline-offset-[-2px]"
       id="html"
       name="html"
       rows="10"
@@ -32,7 +32,7 @@
 {{ html }}</textarea>
     </div>
     <div class="px-3 py-2 border-t border-base-300">
-    <p class="intro field-hint" id="html-help">Paste your HTML. It will be published as index.html.</p>
+    <p class="intro field-hint" id="html-help">Published as index.html.</p>
     {% if invalid_field == Some("html") %}
     {% if let Some(message) = error_message %}
     <p class="form-error" id="html-error" role="alert">{{ message }}</p>
@@ -64,7 +64,7 @@
       aria-describedby="files-help"
       {% endif %}
     >
-    <p class="intro field-hint" id="files-help">Choose HTML and its assets together, up to {{ max_files }} files. Use unique filenames in one folder. For folders, upload a ZIP instead.</p>
+    <p class="intro field-hint" id="files-help">HTML and assets, flat, up to {{ max_files }} files.</p>
     {% if invalid_field == Some("files") %}
     {% if let Some(message) = error_message %}
     <p class="form-error" id="files-error" role="alert">{{ message }}</p>
@@ -90,7 +90,7 @@
       aria-describedby="zip-help"
       {% endif %}
     >
-    <p class="intro field-hint" id="zip-help">One ZIP of HTML and assets, folders allowed, up to {{ max_files }} files. A single top-level folder is stripped. Symlinks are rejected.</p>
+    <p class="intro field-hint" id="zip-help">Folders allowed. One top-level folder is stripped. No symlinks.</p>
     {% if invalid_field == Some("zip") %}
     {% if let Some(message) = error_message %}
     <p class="form-error" id="zip-error" role="alert">{{ message }}</p>
@@ -102,7 +102,7 @@
     <label class="hint" for="entry">entry <span class="sr-only">filename (optional)</span></label>
     <div class="min-w-0">
     <input
-      class="input input-sm w-full sm:max-w-[24ch]"
+      class="input input-sm font-mono w-full sm:max-w-[24ch]"
       type="text"
       id="entry"
       name="entry"
@@ -117,7 +117,7 @@
       aria-describedby="entry-help"
       {% endif %}
     >
-    <p class="intro field-hint" id="entry-help">The first file viewers open. Leave blank to use index.html, or the only top-level HTML file. Otherwise, enter an exact top-level filename.</p>
+    <p class="intro field-hint" id="entry-help">Defaults to index.html or the only HTML file.</p>
     {% if invalid_field == Some("entry") %}
     {% if let Some(message) = error_message %}
     <p class="form-error" id="entry-error" role="alert">{{ message }}</p>

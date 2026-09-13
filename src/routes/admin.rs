@@ -10,7 +10,7 @@ use askama::Template;
 use axum::{
     Router,
     body::Body,
-    extract::{ConnectInfo, DefaultBodyLimit, Request, State},
+    extract::{ConnectInfo, DefaultBodyLimit, Path, Request, State},
     http::{
         HeaderMap, HeaderValue, StatusCode, Uri,
         header::{
@@ -34,7 +34,8 @@ const THEME_FIELD_BYTES: usize = 16;
 pub(super) const DARK_THEME: &str = "ledger";
 const LIGHT_THEME: &str = "ledger-light";
 const STYLESHEET: &str = include_str!("../../static/app.css");
-const ADMIN_POLICY: &str = "default-src 'none'; style-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
+const ADMIN_POLICY: &str = "default-src 'none'; style-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
+const FONT_CACHE: &str = "public, max-age=31536000, immutable";
 type AdminState = (Arc<Auth>, ClientIpSource);
 
 /// Builds administrator routes with one shared response security policy.
@@ -48,6 +49,10 @@ pub(super) fn router(auth: Arc<Auth>, ip_source: ClientIpSource, publishing: Rou
             get(|| async { ([(CONTENT_TYPE, "text/css; charset=utf-8")], STYLESHEET) }),
         )
         .route("/static/admin.js", get(|| async { AdminScript::asset() }))
+        .route(
+            "/static/fonts/{name}",
+            get(|Path(name): Path<String>| async move { font_response(&name) }),
+        )
         .layer(DefaultBodyLimit::max(super::FORM_BODY_BYTES))
         .with_state((auth, ip_source))
         .merge(publishing)
@@ -259,12 +264,41 @@ async fn finish_response(request: Request, next: Next) -> Response {
             HeaderValue::from_static(ADMIN_POLICY)
         };
     let headers = response.headers_mut();
-    headers.insert(CACHE_CONTROL, HeaderValue::from_static("private, no-store"));
+    headers
+        .entry(CACHE_CONTROL)
+        .or_insert(HeaderValue::from_static("private, no-store"));
     headers.insert(X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"));
     // no-referrer serializes native form POST origins as null in browsers.
     headers.insert(REFERRER_POLICY, HeaderValue::from_static("same-origin"));
     headers.insert(CONTENT_SECURITY_POLICY, policy);
     response
+}
+
+/// Serves one embedded Atkinson Hyperlegible face, or 404 for any other name.
+pub(super) fn font_response(name: &str) -> Response {
+    let bytes: &'static [u8] = match name {
+        "AtkinsonHyperlegibleNext-Regular.woff2" => {
+            include_bytes!("../../static/fonts/AtkinsonHyperlegibleNext-Regular.woff2")
+        }
+        "AtkinsonHyperlegibleNext-SemiBold.woff2" => {
+            include_bytes!("../../static/fonts/AtkinsonHyperlegibleNext-SemiBold.woff2")
+        }
+        "AtkinsonHyperlegibleNext-Bold.woff2" => {
+            include_bytes!("../../static/fonts/AtkinsonHyperlegibleNext-Bold.woff2")
+        }
+        "AtkinsonHyperlegibleMono-Regular.woff2" => {
+            include_bytes!("../../static/fonts/AtkinsonHyperlegibleMono-Regular.woff2")
+        }
+        "AtkinsonHyperlegibleMono-Medium.woff2" => {
+            include_bytes!("../../static/fonts/AtkinsonHyperlegibleMono-Medium.woff2")
+        }
+        _ => return StatusCode::NOT_FOUND.into_response(),
+    };
+    (
+        [(CONTENT_TYPE, "font/woff2"), (CACHE_CONTROL, FONT_CACHE)],
+        bytes,
+    )
+        .into_response()
 }
 
 /// Renders a login form without retaining or echoing its submitted password.

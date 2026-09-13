@@ -351,7 +351,7 @@ impl AdminSite {
     }
 }
 
-fn compact_size(bytes: i64) -> String {
+pub(super) fn compact_size(bytes: i64) -> String {
     let mut value = bytes as f64;
     if value < BYTES_PER_UNIT {
         return bytes.to_string();

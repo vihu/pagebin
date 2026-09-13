@@ -149,7 +149,6 @@ pub(super) fn show(
         file_count: site.file_count,
         size_bytes: site.size_bytes,
         visibility: &site.visibility,
-        entry: &site.entry,
         created: &site.created,
         expires: &site.expires,
         settings_title: &submitted.title,
@@ -336,8 +335,6 @@ pub(super) struct SitePage<'a> {
     pub(super) slug: &'a str,
     /// The human-readable stored access mode.
     pub(super) visibility: &'a str,
-    /// The stored entry filename.
-    pub(super) entry: &'a str,
     /// The creation time formatted as a UTC display label.
     pub(super) created: &'a str,
     /// The expiry formatted as a UTC display label, or the no-expiry label.
@@ -397,6 +394,11 @@ impl SitePage<'_> {
     /// Links the replace tabs back to this page.
     fn replace_base(&self) -> String {
         format!("/sites/{}", self.slug)
+    }
+
+    /// Formats the size compactly; the full byte count stays in the title.
+    fn compact_size(&self) -> String {
+        management::compact_size(self.size_bytes)
     }
 
     /// Shows the same file-count limit enforced by parsing and storage.
