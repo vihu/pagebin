@@ -34,8 +34,9 @@ const THEME_FIELD_BYTES: usize = 16;
 pub(super) const DARK_THEME: &str = "ledger";
 const LIGHT_THEME: &str = "ledger-light";
 const STYLESHEET: &str = include_str!("../../static/app.css");
-const ADMIN_POLICY: &str = "default-src 'none'; style-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
+const ADMIN_POLICY: &str = "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
 const FONT_CACHE: &str = "public, max-age=31536000, immutable";
+const ICON_CACHE: &str = "public, max-age=86400";
 type AdminState = (Arc<Auth>, ClientIpSource);
 
 /// Builds administrator routes with one shared response security policy.
@@ -49,6 +50,7 @@ pub(super) fn router(auth: Arc<Auth>, ip_source: ClientIpSource, publishing: Rou
             get(|| async { ([(CONTENT_TYPE, "text/css; charset=utf-8")], STYLESHEET) }),
         )
         .route("/static/admin.js", get(|| async { AdminScript::asset() }))
+        .route("/static/favicon.png", get(|| async { favicon_response() }))
         .route(
             "/static/fonts/{name}",
             get(|Path(name): Path<String>| async move { font_response(&name) }),
@@ -297,6 +299,15 @@ pub(super) fn font_response(name: &str) -> Response {
     (
         [(CONTENT_TYPE, "font/woff2"), (CACHE_CONTROL, FONT_CACHE)],
         bytes,
+    )
+        .into_response()
+}
+
+/// Serves the embedded favicon with a one-day cache.
+pub(super) fn favicon_response() -> Response {
+    (
+        [(CONTENT_TYPE, "image/png"), (CACHE_CONTROL, ICON_CACHE)],
+        include_bytes!("../../static/favicon.png").as_slice(),
     )
         .into_response()
 }

@@ -7,7 +7,7 @@ COPY Cargo.toml Cargo.lock README.md ./
 COPY src/ src/
 COPY migrations/ migrations/
 COPY templates/*.html templates/
-COPY static/app.css static/admin.js static/
+COPY static/app.css static/admin.js static/favicon.png static/
 COPY static/fonts/*.woff2 static/fonts/
 RUN cargo build --release --locked \
     && install -d -m 0750 -o 65532 -g 65532 /data

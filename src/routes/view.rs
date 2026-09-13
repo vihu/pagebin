@@ -36,7 +36,7 @@ const INDEX_FILE: &str = "index.html";
 const NOT_FOUND_FILE: &str = "404.html";
 const OPEN_CACHE: &str = "public, max-age=60";
 const CLOSED_CACHE: &str = "private, no-store";
-const UNLOCK_POLICY: &str = "default-src 'none'; style-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
+const UNLOCK_POLICY: &str = "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
 const SITE_PARENT_COUNT: usize = 2;
 
 /// Builds viewer routes without administrator middleware.

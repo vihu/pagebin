@@ -27,6 +27,7 @@ pub(super) fn router(state: ViewerState) -> Router {
         .route("/s/{slug}/__unlock", get(page).post(submit))
         .route("/s/{slug}/__unlock/app.css", get(stylesheet))
         .route("/s/{slug}/__unlock/fonts/{name}", get(font))
+        .route("/s/{slug}/__unlock/favicon.png", get(favicon))
         .layer(DefaultBodyLimit::max(super::FORM_BODY_BYTES))
         .with_state(state)
 }
@@ -89,6 +90,14 @@ async fn font(
     Path((raw_slug, name)): Path<(String, String)>,
 ) -> Result<Response> {
     asset(&state, &raw_slug, admin::font_response(&name)).await
+}
+
+/// Serves the embedded favicon only for a live password site.
+async fn favicon(
+    State(state): State<ViewerState>,
+    Path(raw_slug): Path<String>,
+) -> Result<Response> {
+    asset(&state, &raw_slug, admin::favicon_response()).await
 }
 
 /// Gates a trusted asset behind the same checks as the unlock page.
