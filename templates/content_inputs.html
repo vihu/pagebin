@@ -1,0 +1,131 @@
+{% macro content(base, input, html, entry, error_message, invalid_field, max_files) %}
+  <div class="rounded-box border border-base-300 bg-base-200 overflow-hidden">
+    <div class="flex flex-wrap items-center gap-x-3 px-3 border-b border-base-300">
+      <nav class="tabs tabs-border tabs-sm" aria-label="Site input">
+        <a class="tab{% if input == "html" %} tab-active{% else %} hint{% endif %}" href="{{ base }}"{% if input == "html" %} aria-current="page"{% endif %}>paste html</a>
+        <a class="tab{% if input == "files" %} tab-active{% else %} hint{% endif %}" href="{{ base }}?input=files"{% if input == "files" %} aria-current="page"{% endif %}>upload files</a>
+        <a class="tab{% if input == "zip" %} tab-active{% else %} hint{% endif %}" href="{{ base }}?input=zip"{% if input == "zip" %} aria-current="page"{% endif %}>upload zip</a>
+      </nav>
+      {% if input == "html" %}<span class="ml-auto hint">index.html</span>{% endif %}
+    </div>
+  {% if input == "html" %}
+  <div>
+    <label class="sr-only" for="html">HTML</label>
+    <div class="grid grid-cols-[4ch_minmax(0,1fr)]">
+      <div class="border-r border-base-300 select-none" aria-hidden="true"></div>
+    <textarea
+      class="textarea textarea-ghost w-full min-w-0 min-h-88 leading-6 py-3 px-3 rounded-none focus:outline-offset-[-2px]"
+      id="html"
+      name="html"
+      rows="10"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="off"
+      required
+      {% if invalid_field == Some("html") && error_message.is_some() %}
+      aria-invalid="true"
+      aria-describedby="html-help html-error"
+      {% else %}
+      aria-describedby="html-help"
+      {% endif %}
+    >
+{{ html }}</textarea>
+    </div>
+    <div class="px-3 py-2 border-t border-base-300">
+    <p class="intro field-hint" id="html-help">Paste your HTML. It will be published as index.html.</p>
+    {% if invalid_field == Some("html") %}
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="html-error" role="alert">{{ message }}</p>
+    {% endif %}
+    {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="p-4 sm:p-6 grid gap-4">
+  {% if error_message.is_some() %}
+  <p class="intro field-hint" id="files-reselect">Select your files again before publishing. Browsers cannot restore file selections.</p>
+  {% endif %}
+  {% if input == "files" %}
+  <div>
+    <label class="block hint mb-2" for="files">site files</label>
+    <input
+      class="file-input file-input-sm w-full"
+      type="file"
+      id="files"
+      name="files[]"
+      multiple
+      required
+      {% if invalid_field == Some("files") && error_message.is_some() %}
+      aria-invalid="true"
+      aria-describedby="files-help files-error files-reselect"
+      {% else if error_message.is_some() %}
+      aria-describedby="files-help files-reselect"
+      {% else %}
+      aria-describedby="files-help"
+      {% endif %}
+    >
+    <p class="intro field-hint" id="files-help">Choose HTML and its assets together, up to {{ max_files }} files. Use unique filenames in one folder. For folders, upload a ZIP instead.</p>
+    {% if invalid_field == Some("files") %}
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="files-error" role="alert">{{ message }}</p>
+    {% endif %}
+    {% endif %}
+  </div>
+  {% else %}
+  <div>
+    <label class="block hint mb-2" for="zip">zip archive</label>
+    <input
+      class="file-input file-input-sm w-full"
+      type="file"
+      id="zip"
+      name="zip"
+      accept=".zip,application/zip"
+      required
+      {% if invalid_field == Some("zip") && error_message.is_some() %}
+      aria-invalid="true"
+      aria-describedby="zip-help zip-error files-reselect"
+      {% else if error_message.is_some() %}
+      aria-describedby="zip-help files-reselect"
+      {% else %}
+      aria-describedby="zip-help"
+      {% endif %}
+    >
+    <p class="intro field-hint" id="zip-help">One ZIP of HTML and assets, folders allowed, up to {{ max_files }} files. A single top-level folder is stripped. Symlinks are rejected.</p>
+    {% if invalid_field == Some("zip") %}
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="zip-error" role="alert">{{ message }}</p>
+    {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+  <div class="grid gap-x-4 gap-y-1 sm:grid-cols-[12ch_minmax(0,1fr)] items-baseline max-w-[72ch]">
+    <label class="hint" for="entry">entry <span class="sr-only">filename (optional)</span></label>
+    <div class="min-w-0">
+    <input
+      class="input input-sm w-full sm:max-w-[24ch]"
+      type="text"
+      id="entry"
+      name="entry"
+      value="{{ entry }}"
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck="false"
+      {% if invalid_field == Some("entry") && error_message.is_some() %}
+      aria-invalid="true"
+      aria-describedby="entry-help entry-error"
+      {% else %}
+      aria-describedby="entry-help"
+      {% endif %}
+    >
+    <p class="intro field-hint" id="entry-help">The first file viewers open. Leave blank to use index.html, or the only top-level HTML file. Otherwise, enter an exact top-level filename.</p>
+    {% if invalid_field == Some("entry") %}
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="entry-error" role="alert">{{ message }}</p>
+    {% endif %}
+    {% endif %}
+    </div>
+  </div>
+  </div>
+  {% endif %}
+  </div>
+{% endmacro %}

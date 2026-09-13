@@ -1,0 +1,148 @@
+{% extends "layout.html" %}
+{% import "admin_header.html" as shell %}
+{% import "content_inputs.html" as inputs %}
+
+{% block title %}New site — pagebin{% endblock %}
+{% block page_class %} publishing{% endblock %}
+{% block header %}{% call shell::admin("new", csrf_token) %}{% endcall %}{% endblock %}
+
+{% block content %}
+<div class="mt-8 mb-4">
+  <h1 class="font-bold">new page</h1>
+  <p class="hint">Paste HTML or pick files. Publish. Copy the link.</p>
+</div>
+<form action="/sites{% if input != "html" %}?input={{ input }}{% endif %}" method="post" enctype="multipart/form-data" class="grid gap-6">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if general_error() %}
+  {% if let Some(message) = error_message %}
+  <p class="form-error" role="alert">{{ message }}</p>
+  {% endif %}
+  {% endif %}
+  {% call inputs::content("/new", input, html, entry, error_message, invalid_field, max_site_files()) %}{% endcall %}
+  <p class="intro field-hint">Switching input mode opens a fresh form.</p>
+  <div class="grid gap-4 max-w-[72ch]">
+  <div class="grid gap-x-4 gap-y-1 sm:grid-cols-[12ch_minmax(0,1fr)] items-baseline">
+    <label class="hint" for="title">title <span class="sr-only">(optional)</span></label>
+    <div class="min-w-0">
+    <input
+      class="input input-sm w-full"
+      type="text"
+      id="title"
+      name="title"
+      value="{{ title }}"
+      {% if invalid_field == Some("title") && error_message.is_some() %}
+      aria-invalid="true"
+      aria-describedby="title-help title-error"
+      {% else %}
+      aria-describedby="title-help"
+      {% endif %}
+    >
+    <p class="intro field-hint" id="title-help">Up to 200 characters. Shown in your site list and details, not added to the HTML.</p>
+    {% if invalid_field == Some("title") %}
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="title-error" role="alert">{{ message }}</p>
+    {% endif %}
+    {% endif %}
+    </div>
+  </div>
+  <div class="grid gap-x-4 gap-y-1 sm:grid-cols-[12ch_minmax(0,1fr)] items-baseline">
+    <span class="hint" aria-hidden="true">access</span>
+  <fieldset class="min-w-0"
+    {% if invalid_field == Some("visibility") && error_message.is_some() %}
+    aria-invalid="true"
+    aria-describedby="visibility-help visibility-error"
+    {% else %}
+    aria-describedby="visibility-help"
+    {% endif %}
+  >
+    <legend class="sr-only">access</legend>
+    <div class="join">
+      <input class="join-item btn btn-sm" type="radio" id="visibility-open" name="visibility" value="open" aria-label="open" required {% if visibility == "open" %}checked{% endif %}>
+      <input class="join-item btn btn-sm" type="radio" id="visibility-password" name="visibility" value="password" aria-label="password" required {% if visibility == "password" %}checked{% endif %}>
+    </div>
+    <p class="intro field-hint" id="visibility-help">Open lets anyone with the link view the site. Password requires the site password. There is no public listing.</p>
+    {% if invalid_field == Some("visibility") %}
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="visibility-error" role="alert">{{ message }}</p>
+    {% endif %}
+    {% endif %}
+  </fieldset>
+  </div>
+  <div class="password-group grid gap-x-4 gap-y-1 sm:grid-cols-[12ch_minmax(0,1fr)] items-baseline">
+    <label class="hint" for="password">site password</label>
+    <div class="min-w-0">
+    <input
+      class="input input-sm w-full sm:max-w-[22ch]"
+      type="password"
+      id="password"
+      name="password"
+      placeholder="site password"
+      autocomplete="new-password"
+      {% if invalid_field == Some("password") && error_message.is_some() %}
+      aria-invalid="true"
+      aria-describedby="password-help password-error"
+      {% else %}
+      aria-describedby="password-help"
+      {% endif %}
+    >
+    <p class="intro field-hint" id="password-help">Required when Password is selected. Leave blank for Open.{% if error_message.is_some() %} Passwords are not kept after an error; enter it again if needed.{% endif %}</p>
+    {% if invalid_field == Some("password") %}
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="password-error" role="alert">{{ message }}</p>
+    {% endif %}
+    {% endif %}
+    </div>
+  </div>
+  <div class="grid gap-x-4 gap-y-1 sm:grid-cols-[12ch_minmax(0,1fr)] items-baseline">
+    <label class="hint" for="expires-in">expires</label>
+    <div class="min-w-0">
+    <select class="select select-sm w-full sm:max-w-[24ch]" id="expires-in" name="expires_in"{% if invalid_field == Some("expires_in") && error_message.is_some() %} aria-invalid="true" aria-describedby="expires-error"{% endif %}>
+      <option value="never"{% if expires_in == "" || expires_in == "never" %} selected{% endif %}>never</option>
+      <option value="1h"{% if expires_in == "1h" %} selected{% endif %}>in 1 hour</option>
+      <option value="1d"{% if expires_in == "1d" %} selected{% endif %}>in 1 day</option>
+      <option value="7d"{% if expires_in == "7d" %} selected{% endif %}>in 7 days</option>
+      <option value="30d"{% if expires_in == "30d" %} selected{% endif %}>in 30 days</option>
+    </select>
+    {% if invalid_field == Some("expires_in") %}
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="expires-error" role="alert">{{ message }}</p>
+    {% endif %}
+    {% endif %}
+    </div>
+  </div>
+  <div class="grid gap-x-4 gap-y-1 sm:grid-cols-[12ch_minmax(0,1fr)] items-baseline">
+    <label class="hint" for="slug">link <span class="sr-only">custom slug (optional)</span></label>
+    <div class="min-w-0">
+    <div class="input input-sm w-full">
+      <span class="label hint" aria-hidden="true">/s/</span>
+      <input
+        type="text"
+        id="slug"
+        name="slug"
+        value="{{ slug }}"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        {% if invalid_field == Some("slug") && error_message.is_some() %}
+        aria-invalid="true"
+        aria-describedby="slug-help slug-error"
+        {% else %}
+        aria-describedby="slug-help"
+        {% endif %}
+      >
+    </div>
+    <p class="intro field-hint" id="slug-help">Leave blank for a generated slug. Otherwise, use 3–64 lowercase letters, numbers or hyphens, with no hyphen at either end. Custom slugs may be easy to guess.</p>
+    {% if invalid_field == Some("slug") %}
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="slug-error" role="alert">{{ message }}</p>
+    {% endif %}
+    {% endif %}
+    </div>
+  </div>
+  </div>
+  <div class="flex flex-wrap items-center gap-3">
+    <button class="btn btn-primary btn-sm" type="submit">publish</button>
+    <a class="btn btn-ghost btn-sm" href="/">cancel</a>
+  </div>
+</form>
+{% endblock %}

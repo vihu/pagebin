@@ -1,0 +1,29 @@
+[package]
+description  = "Easy static site sharing"
+edition      = "2024"
+license      = "AGPL-3.0-only"
+name         = "pagebin"
+rust-version = "1.94"
+version      = "0.1.0"
+
+[dependencies]
+argon2             = "0.6"
+askama             = { version = "0.16", default-features = false, features = ["derive", "std"] }
+axum               = { version = "0.8", default-features = false, features = ["http1", "multipart", "tokio"] }
+axum-extra         = { version = "0.12", default-features = false, features = ["cookie-key-expansion", "cookie-signed"] }
+petname            = { version = "3", default-features = false, features = ["default-words"] }
+rand               = { version = "0.10", default-features = false, features = ["std", "sys_rng"] }
+serde              = { version = "1", features = ["derive"] }
+serde_json         = "1"
+sqlx               = { version = "0.9", default-features = false, features = ["macros", "migrate", "runtime-tokio", "sqlite-bundled"] }
+subtle             = { version = "2", default-features = false, features = ["std"] }
+thiserror          = "2"
+tokio              = { version = "1", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "sync", "time"] }
+tower-http         = { version = "0.7", default-features = false, features = ["fs"] }
+tracing            = { version = "0.1", default-features = false, features = ["std"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt"] }
+zip                = { version = "8", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+
+[dev-dependencies]
+tempfile = "3"
+tower    = { version = "0.5", features = ["util"] }

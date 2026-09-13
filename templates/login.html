@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}Sign in — pagebin{% endblock %}
+
+{% block content %}
+<section class="max-w-[48ch] mt-8">
+<h1>Sign in</h1>
+<p class="intro">Use your admin password to continue.</p>
+<form action="/login" method="post" enctype="multipart/form-data" class="grid gap-5 mt-6">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div>
+    <label class="block hint mb-2" for="password">Admin password</label>
+    <input
+      class="input input-sm w-full"
+      type="password"
+      id="password"
+      name="password"
+      autocomplete="current-password"
+      required
+      {% if error_message.is_some() %}
+      aria-invalid="true"
+      aria-describedby="password-error"
+      {% endif %}
+    >
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="password-error" role="alert">{{ message }}</p>
+    {% endif %}
+  </div>
+  <button class="btn btn-primary btn-sm justify-self-start" type="submit">Sign in</button>
+</form>
+</section>
+{% endblock %}

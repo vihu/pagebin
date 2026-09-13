@@ -1,0 +1,15 @@
+{% macro admin(current, csrf_token) %}
+<header class="navbar px-0 border-b border-base-300 min-h-12">
+  <div class="navbar-start gap-6">
+    <a class="font-bold" href="/">pagebin</a>
+    <nav class="flex gap-4" aria-label="Main navigation">
+      <a class="link link-hover{% if current == "pages" %} text-primary{% endif %}" href="/"{% if current == "pages" %} aria-current="page"{% endif %}>pages</a>
+      <a class="link link-hover{% if current == "new" %} text-primary{% endif %}" href="/new"{% if current == "new" %} aria-current="page"{% endif %}>new</a>
+    </nav>
+  </div>
+  <div class="navbar-end gap-2">
+    {% include "theme.html" %}
+    {% include "logout.html" %}
+  </div>
+</header>
+{% endmacro %}

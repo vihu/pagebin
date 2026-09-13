@@ -1,0 +1,23 @@
+# Only build inputs may enter the context.
+**
+!Cargo.toml
+!Cargo.lock
+!README.md
+!LICENSE
+!src/
+!src/**/
+!src/**/*.rs
+!migrations/
+!migrations/*.sql
+!templates/
+!templates/*.html
+!static/
+!static/app.css
+!static/admin.js
+
+# These remain excluded even inside an allowed source directory.
+**/.env*
+**/*.pem
+**/*.key
+**/id_rsa*
+**/secrets/**

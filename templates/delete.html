@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+{% import "admin_header.html" as shell %}
+
+{% block title %}Delete site — {{ slug }} — pagebin{% endblock %}
+{% block page_class %} publishing{% endblock %}
+{% block header %}{% call shell::admin("settings", csrf_token) %}{% endcall %}{% endblock %}
+
+{% block content %}
+<div class="max-w-[72ch] mt-8">
+<h1>Delete this site?</h1>
+<section class="mt-4" aria-labelledby="delete-title">
+  <h2 id="delete-title">{% if title.is_empty() %}{{ slug }}{% else %}{{ title }}{% endif %}</h2>
+  <p class="intro">Slug: {{ slug }}</p>
+  <p class="intro">This permanently removes the site and its files. There is no undo.</p>
+  <p class="intro">Its share link will stop serving the site. Already-open pages and cached copies may remain available.</p>
+</section>
+<form action="/sites/{{ slug }}/delete" method="post" enctype="multipart/form-data" class="grid gap-5 mt-6">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if let Some(message) = error_message %}
+  <p class="form-error" role="alert">{{ message }}</p>
+  {% endif %}
+  <label class="confirmation flex items-center gap-3" for="confirm">
+    <input class="size-5 shrink-0" type="checkbox" id="confirm" name="confirm" value="delete" required>
+    I understand that deleting this site cannot be undone.
+  </label>
+  <button class="btn btn-error btn-sm justify-self-start" type="submit">Delete site permanently</button>
+</form>
+{% if error_message.is_some() %}
+<a class="btn btn-ghost btn-sm mt-4" href="/">Back to sites</a>
+{% else %}
+<a class="btn btn-ghost btn-sm mt-4" href="/sites/{{ slug }}">Cancel and keep site</a>
+{% endif %}
+</div>
+{% endblock %}

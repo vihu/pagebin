@@ -1,0 +1,4 @@
+<form action="/theme" method="post" enctype="multipart/form-data">
+  <input type="hidden" name="theme" value="{% if theme == "ledger" %}ledger-light{% else %}ledger{% endif %}">
+  <button class="btn btn-ghost btn-sm" type="submit" title="Switch between dark and light">theme</button>
+</form>

@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+{% import "admin_header.html" as shell %}
+{% import "icons.html" as icons %}
+
+{% block title %}Pages — pagebin{% endblock %}
+{% block page_class %} publishing{% endblock %}
+{% block scripts %}<script src="/static/admin.js" defer></script>{% endblock %}
+{% block header %}{% call shell::admin("pages", csrf_token) %}{% endcall %}{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-4 mt-8 mb-4">
+  <div>
+    <h1>pages <span class="hint font-normal">{{ sites.len() }}{% if previous_url.is_some() || next_url.is_some() %} shown{% endif %}</span></h1>
+    <p class="hint">Only you can see this list. Share the links, not this page.</p>
+  </div>
+  <a class="btn btn-primary btn-sm" href="/new">new page</a>
+</div>
+{% if let Some(message) = notice %}
+<p class="intro mb-4" role="status">{{ message }}</p>
+{% endif %}
+{% if sites.is_empty() %}
+<section class="border-y border-base-300 py-8">
+  {% if previous_url.is_some() %}
+  <h2>No pages on this page</h2>
+  <p class="intro">Return to the previous page or create a new page.</p>
+  {% else %}
+  <h2>No pages yet</h2>
+  <p class="intro">Paste HTML or upload files to publish your first page and get a share link.</p>
+  {% endif %}
+  <a class="btn btn-primary btn-sm mt-4" href="/new">new page</a>
+</section>
+{% else %}
+<table class="table table-fixed w-full library-table">
+  <caption class="sr-only">Published pages</caption>
+  <colgroup><col><col class="w-[12ch]"><col class="w-[8ch]"><col class="w-[14ch]"></colgroup>
+  <thead>
+    <tr class="hint">
+      <th class="font-normal" scope="col">page</th>
+      <th class="font-normal" scope="col">access</th>
+      <th class="font-normal text-right pr-4" scope="col">size</th>
+      <th class="font-normal" scope="col">created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for site in sites %}
+    <tr class="hover:bg-base-200" data-copy-link>
+      <td>
+        <div class="flex items-center gap-1">
+          <a class="font-bold link link-hover library-title" href="{{ site.url }}" target="_blank" rel="noopener">{% if site.title.is_empty() %}{{ site.slug }}{% else %}{{ site.title }}{% endif %}</a>
+          <a class="btn btn-ghost btn-xs btn-square shrink-0 hint" href="/sites/{{ site.slug }}" aria-label="Settings for {{ site.slug }}">{% call icons::settings() %}{% endcall %}</a>
+        </div>
+        <div class="flex items-center gap-1 hint">
+          <a class="link link-hover truncate min-w-0" data-share-url href="{{ site.url }}" title="{{ site.url }}">{{ site.url }}</a>
+          <button class="btn btn-ghost btn-xs btn-square shrink-0" type="button" data-copy-button hidden aria-label="Copy share link for {{ site.slug }}">{% call icons::copy() %}{% endcall %}</button>
+        </div>
+        <p class="intro" data-copy-status role="status" aria-live="polite" aria-atomic="true"></p>
+      </td>
+      <td class="whitespace-nowrap row-meta-cell">
+        <span class="inline-flex items-center gap-2">
+          {% if site.visibility == "password" %}<span class="status status-primary" aria-hidden="true"></span>{% else %}<span class="size-2 rounded-full border border-primary" aria-hidden="true"></span>{% endif %}
+          {{ site.visibility }}
+        </span>
+      </td>
+      <td class="whitespace-nowrap text-right tabular-nums hint pr-4 row-meta-cell"><span title="{{ site.size_bytes }} bytes">{{ site.compact_size() }}</span></td>
+      <td class="whitespace-nowrap hint row-meta-cell">
+        <span title="{{ site.created }}">{{ site.created_date() }}</span>
+        {% if site.expires != "Never" %}<div class="text-xs">expires {{ site.expires }}</div>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="hint mt-3">Title opens the page. Gear opens its settings. Clipboard copies the link.</p>
+<p class="hint text-xs mt-1">Sizes use 1024-byte units. Dates are UTC; full metadata is in settings.</p>
+{% endif %}
+{% if previous_url.is_some() || next_url.is_some() %}
+<nav class="flex flex-wrap gap-3 mt-6" aria-label="Site pages">
+  {% if let Some(url) = previous_url %}
+  <a class="btn btn-ghost btn-sm" href="{{ url }}" rel="prev">Previous page</a>
+  {% endif %}
+  {% if let Some(url) = next_url %}
+  <a class="btn btn-ghost btn-sm" href="{{ url }}" rel="next">Next page</a>
+  {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

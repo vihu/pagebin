@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" data-theme="{{ theme }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
+    <meta name="robots" content="noindex">
+    <title>{% block title %}pagebin{% endblock %}</title>
+    <link rel="stylesheet" href="{% block stylesheet_url %}/static/app.css{% endblock %}">
+    {% block scripts %}{% endblock %}
+  </head>
+  <body class="font-mono text-sm min-h-screen bg-base-100 text-base-content">
+    <!--
+    THESIS: A compact page ledger, not a dashboard or a custom component system.
+    OWN-WORLD: User-supplied DaisyUI Ledger themes; charcoal or paper surfaces, amber actions, monospace text, quarter-rem corners.
+    STORY: Open a real page, copy its link, publish another, or manage its settings with native forms.
+    FIRST VIEWPORT: A 104ch column; slim navigation above a four-column page ledger. Publishing leads with its editor and compact options. Settings lead with the real link and metadata. Authentication and confirmation stay focused.
+    FORM: The supplied DaisyUI mockup replaces the earlier direction; the previously acknowledged seed b881b2ca is overridden by this explicit reference.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
+    <div class="page{% block page_class %}{% endblock %}">
+      {% block header %}
+      <header class="navbar px-0 border-b border-base-300 min-h-12">
+        <div class="navbar-start"><a class="font-bold" href="/login">pagebin</a></div>
+        <div class="navbar-end">{% include "theme.html" %}</div>
+      </header>
+      {% endblock %}
+      <main id="main">
+        {% block content %}{% endblock %}
+      </main>
+      {% block footer %}{% endblock %}
+    </div>
+  </body>
+</html>

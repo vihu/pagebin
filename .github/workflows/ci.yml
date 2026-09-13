@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, "1.94"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust toolchain and checks
+        run: rustup toolchain install "${{ matrix.toolchain }}" --profile minimal --component rustfmt,clippy
+      - name: Format
+        run: cargo +${{ matrix.toolchain }} fmt --check
+      - name: Clippy
+        run: cargo +${{ matrix.toolchain }} clippy --locked --all-targets -- -D warnings
+      - name: Test
+        run: cargo +${{ matrix.toolchain }} test --locked
+
+  css:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned command runner
+        run: cargo install just --version 1.58.0 --locked --root "$RUNNER_TEMP/pagebin-css-tools"
+      - name: Check generated CSS
+        run: |
+          export PATH="$RUNNER_TEMP/pagebin-css-tools/bin:$PATH"
+          just tailwind css
+          git diff --exit-code -- static/app.css
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build image without publishing
+        run: docker build --pull -t pagebin:ci .

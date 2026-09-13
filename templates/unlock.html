@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block title %}Unlock site — pagebin{% endblock %}
+{% block stylesheet_url %}/s/{{ slug }}/__unlock/app.css{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}<footer class="intro flex items-center justify-between max-w-[48ch] mt-6"><small>pagebin</small>{% include "theme_local.html" %}</footer>{% endblock %}
+
+{% block content %}
+<section class="max-w-[48ch] mt-12">
+<h1>Unlock site</h1>
+<p class="intro">Enter the site password to continue.</p>
+<form action="/s/{{ slug }}/__unlock" method="post" enctype="multipart/form-data" class="grid gap-5 mt-6">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if !invalid_password %}
+  {% if let Some(message) = error_message %}
+  <p class="form-error" role="alert">{{ message }}</p>
+  {% endif %}
+  {% endif %}
+  <div>
+    <label class="block hint mb-2" for="password">Site password</label>
+    <input
+      class="input input-sm w-full"
+      type="password"
+      id="password"
+      name="password"
+      autocomplete="current-password"
+      required
+      {% if invalid_password && error_message.is_some() %}
+      autofocus
+      aria-invalid="true"
+      aria-describedby="password-error"
+      {% endif %}
+    >
+    {% if invalid_password %}
+    {% if let Some(message) = error_message %}
+    <p class="form-error" id="password-error" role="alert">{{ message }}</p>
+    {% endif %}
+    {% endif %}
+  </div>
+  <button class="btn btn-primary btn-sm justify-self-start" type="submit">Unlock site</button>
+</form>
+{% if error_message.is_some() %}
+<a class="btn btn-ghost btn-sm mt-6" href="/s/{{ slug }}/__unlock">Reopen unlock form</a>
+{% endif %}
+</section>
+{% endblock %}
