@@ -355,6 +355,13 @@ async fn auth_opt_in_proxy_mode_rejects_invalid_headers_and_requires_connection_
 #[tokio::test]
 async fn theme_choice_persists_in_a_cookie_and_rejects_unknown_values() {
     let (app, pool, _directory) = spawn_app(Some(VIEW_HOST)).await;
+    let (status, _, body) = send(&app, get("/login", "")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(body.contains("data-theme=\"ledger\""));
+    assert!(body.contains("value=\"ledger-light\""));
+    assert!(body.contains("aria-label=\"Switch to light mode\""));
+    assert!(body.contains("title=\"Switch to light mode\""));
+    assert!(body.contains("<circle cx=\"12\" cy=\"12\" r=\"4\"/>"));
     let mut request = post("/theme", "", &[("theme", b"ledger-light")]);
     request.headers_mut().insert(
         REFERER,
@@ -369,11 +376,19 @@ async fn theme_choice_persists_in_a_cookie_and_rejects_unknown_values() {
     assert_eq!(status, StatusCode::OK);
     assert!(body.contains("data-theme=\"ledger-light\""));
     assert!(body.contains("value=\"ledger\""));
-    let (status, headers, _) = send(&app, post("/theme", "", &[("theme", b"ledger")])).await;
+    assert!(body.contains("aria-label=\"Switch to dark mode\""));
+    assert!(body.contains("title=\"Switch to dark mode\""));
+    assert!(body.contains("<path d=\"M20.985"));
+    let (status, headers, _) = send(&app, post("/theme", &jar, &[("theme", b"ledger")])).await;
     assert_eq!(
         (status, &headers[LOCATION]),
         (StatusCode::SEE_OTHER, &"/".parse().unwrap())
     );
+    let jar = cookies(&headers);
+    assert!(jar.contains("pb_theme=ledger"));
+    let (_, _, body) = send(&app, get("/login", &jar)).await;
+    assert!(body.contains("data-theme=\"ledger\""));
+    assert!(body.contains("aria-label=\"Switch to light mode\""));
     let (status, _, _) = send(&app, post("/theme", "", &[("theme", b"bogus")])).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
     pool.close().await;

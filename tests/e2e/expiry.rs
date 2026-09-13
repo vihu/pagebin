@@ -55,6 +55,15 @@ async fn expired_site_is_404_before_sweep_and_settings_keep_or_clear_expiry() {
     assert!((expiry - now.as_secs() as i64 - WEEK).abs() <= CLOCK_SLACK);
     let (status, _, body) = auth::send(&app, publishing::viewer("/s/expiring/")).await;
     assert_eq!((status, body.as_bytes()), (StatusCode::OK, HTML));
+    let (_, _, list) = auth::send(&app, auth::get("/", &session)).await;
+    let page_cell = list
+        .split("<tbody>")
+        .nth(1)
+        .unwrap()
+        .split("</td>")
+        .next()
+        .unwrap();
+    assert!(page_cell.contains(">expires ") && page_cell.contains(" UTC</p>"));
     let save = |expires_in: &'static str| {
         let fields = [
             ("csrf_token", token.as_bytes()),
@@ -79,6 +88,8 @@ async fn expired_site_is_404_before_sweep_and_settings_keep_or_clear_expiry() {
         StatusCode::SEE_OTHER
     );
     assert_eq!(row(&pool, "expiring").await, Some(None));
+    let (_, _, list) = auth::send(&app, auth::get("/", &session)).await;
+    assert!(!list.contains(">expires "));
     sqlx::query("UPDATE sites SET expires_at = 1 WHERE slug = 'expiring'")
         .execute(&pool)
         .await

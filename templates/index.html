@@ -53,6 +53,7 @@
           <a class="link link-hover truncate min-w-0 font-mono" data-share-url href="{{ site.url }}" title="{{ site.url }}">{{ site.url }}</a>
           <button class="btn btn-ghost btn-xs btn-square shrink-0" type="button" data-copy-button hidden aria-label="Copy share link for {{ site.slug }}">{% call icons::copy() %}{% endcall %}</button>
         </div>
+        {% if site.expires != "Never" %}<p class="hint text-xs mt-1">expires {{ site.expires }}</p>{% endif %}
         <p class="intro" data-copy-status role="status" aria-live="polite" aria-atomic="true"></p>
       </td>
       <td class="whitespace-nowrap row-meta-cell">
@@ -64,7 +65,6 @@
       <td class="whitespace-nowrap text-right tabular-nums hint pr-4 row-meta-cell"><span title="{{ site.size_bytes }} bytes">{{ site.compact_size() }}</span></td>
       <td class="whitespace-nowrap hint row-meta-cell">
         <span title="{{ site.created }}">{{ site.created_date() }}</span>
-        {% if site.expires != "Never" %}<div class="text-xs">expires {{ site.expires }}</div>{% endif %}
       </td>
     </tr>
     {% endfor %}
