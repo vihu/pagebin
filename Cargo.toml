@@ -4,7 +4,7 @@ edition      = "2024"
 license      = "AGPL-3.0-only"
 name         = "pagebin"
 rust-version = "1.94"
-version      = "0.1.1"
+version      = "0.1.2"
 
 [dependencies]
 argon2             = "0.6"
