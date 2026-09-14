@@ -1,9 +1,18 @@
 # pagebin
 
 [![CI](https://github.com/vihu/pagebin/actions/workflows/ci.yml/badge.svg)](https://github.com/vihu/pagebin/actions/workflows/ci.yml)
+[![Release](https://github.com/vihu/pagebin/actions/workflows/release.yml/badge.svg)](https://github.com/vihu/pagebin/actions/workflows/release.yml)
 
-Self-hosted static site sharing. Sign in, paste HTML or upload flat files, and share
-a link on a separate viewer host, open or password-protected.
+Self-hosted static site sharing. Sign in, paste HTML or upload flat files, and share a link on a separate viewer host, open or password-protected.
+
+## Screenshots
+
+<img width="2831" height="1528" alt="Screenshot_20260914_123538" src="https://github.com/user-attachments/assets/20e18b5a-78b4-4232-ba8e-346a66170eb6" />
+<img width="2831" height="1528" alt="Screenshot_20260914_123529" src="https://github.com/user-attachments/assets/7bcb32c5-10eb-43a8-94cd-265fa533e3d2" />
+<img width="2831" height="2058" alt="Screenshot_20260914_123521" src="https://github.com/user-attachments/assets/6d456b9e-e44c-4b85-bbf5-c1c40e34515d" />
+<img width="2831" height="2058" alt="Screenshot_20260914_123507" src="https://github.com/user-attachments/assets/d01a1173-6168-4799-a247-7a860a4e4e61" />
+<img width="2831" height="817" alt="Screenshot_20260914_123443" src="https://github.com/user-attachments/assets/ab5249f8-8887-43e9-a77b-d0b9fd270453" />
+
 
 ## Run
 
