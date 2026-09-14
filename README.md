@@ -1,6 +1,7 @@
 # pagebin
 
 [![CI](https://github.com/vihu/pagebin/actions/workflows/ci.yml/badge.svg)](https://github.com/vihu/pagebin/actions/workflows/ci.yml)
+[![Release](https://github.com/vihu/pagebin/actions/workflows/release.yml/badge.svg)](https://github.com/vihu/pagebin/actions/workflows/release.yml)
 
 Self-hosted static site sharing. Sign in, paste HTML or upload flat files, and share
 a link on a separate viewer host, open or password-protected.
