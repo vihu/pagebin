@@ -30,8 +30,6 @@ pub(crate) use validate::{SitePath, Slug};
 
 /// Maximum number of flat uploaded files accepted in one site.
 pub(crate) const MAX_SITE_FILES: usize = 10_000;
-/// Number of displayed administration rows per page, excluding its sentinel.
-pub(crate) const SITES_PER_PAGE: usize = 20;
 const MAX_SLUG_ATTEMPTS: usize = 8;
 const ENTRY_FILENAME: &str = "index.html";
 
@@ -174,17 +172,22 @@ impl Sites {
             .map_err(AppError::publishing)
     }
 
-    /// Reads one-based pages with at most one extra row indicating a next page.
+    /// Reads one-based pages of `per` matches plus one row indicating a next page.
     ///
     /// # Errors
     /// Returns 400 for zero or overflowing pages, or a safe database failure.
-    pub(crate) async fn list(&self, page: usize) -> Result<Vec<SiteDetails>> {
+    pub(crate) async fn list(
+        &self,
+        page: usize,
+        per: usize,
+        search: &str,
+    ) -> Result<Vec<SiteDetails>> {
         let offset = page
             .checked_sub(1)
-            .and_then(|page| page.checked_mul(SITES_PER_PAGE))
+            .and_then(|page| page.checked_mul(per))
             .and_then(|offset| i64::try_from(offset).ok())
             .ok_or_else(|| AppError::request(StatusCode::BAD_REQUEST, "Invalid site-list page."))?;
-        db::list_sites(&self.pool, offset)
+        db::list_sites(&self.pool, search, per as i64 + 1, offset)
             .await
             .map_err(AppError::publishing)
     }

@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{
     AppError, Result,
-    sites::{DeleteOutcome, SITES_PER_PAGE, SiteDetails, Slug},
+    sites::{DeleteOutcome, SiteDetails, Slug},
 };
 use askama::Template;
 use axum::{
@@ -44,24 +44,23 @@ async fn index(
         return Ok(Redirect::to("/login").into_response());
     };
     let query = ListQuery::parse(uri.query())?;
-    let mut records = state.sites.list(query.page).await?;
-    let next = if records.len() > SITES_PER_PAGE {
-        let page = query.page.checked_add(1).ok_or_else(super::invalid)?;
-        Some(format!("/?page={page}"))
-    } else {
-        None
-    };
-    records.truncate(SITES_PER_PAGE);
+    let mut records = state
+        .sites
+        .list(query.page, query.per, &query.search)
+        .await?;
+    let next_page = (records.len() > query.per).then(|| query.page + 1);
+    records.truncate(query.per);
     let sites = records
         .into_iter()
         .map(|record| present(record, &state.public_url))
         .collect::<Result<Vec<_>>>()?;
-    let previous = (query.page > 1).then(|| format!("/?page={}", query.page - 1));
     let body = IndexPage {
         csrf_token: &csrf_token,
         sites: &sites,
-        previous_url: previous.as_deref(),
-        next_url: next.as_deref(),
+        search: &query.search,
+        per: query.per,
+        previous_page: (query.page > 1).then(|| query.page - 1),
+        next_page,
         notice: query.notice,
         theme: admin::theme(&headers),
     }
@@ -301,10 +300,14 @@ pub(super) struct IndexPage<'a> {
     pub(super) csrf_token: &'a str,
     /// The bounded page of persisted site metadata.
     pub(super) sites: &'a [AdminSite],
-    /// A validated local URL for the previous page, when available.
-    pub(super) previous_url: Option<&'a str>,
-    /// A validated local URL for the next page, when available.
-    pub(super) next_url: Option<&'a str>,
+    /// The decoded search text, escaped by the template.
+    pub(super) search: &'a str,
+    /// The selected page size, one of `PAGE_SIZES`.
+    pub(super) per: usize,
+    /// The previous one-based page number, when available.
+    pub(super) previous_page: Option<usize>,
+    /// The next one-based page number, when available.
+    pub(super) next_page: Option<usize>,
     /// A fixed application notice, rather than reflected query text.
     pub(super) notice: Option<&'a str>,
 }
@@ -316,6 +319,8 @@ const MONTHS: [&str; 12] = [
 ];
 const DISPLAY_DAY: std::ops::RangeInclusive<u8> = 1..=31;
 const YEAR_DIGITS: usize = 4;
+/// Selectable list page sizes; the second is the default.
+const PAGE_SIZES: [usize; 3] = [10, 25, 50];
 
 /// Presents persisted site metadata without exposing uploaded content.
 pub(super) struct AdminSite {
@@ -393,22 +398,26 @@ fn created_date(label: &str) -> String {
     }
 }
 
-/// Validated pagination with optional application-owned status copy.
+/// Validated pagination and search with optional application-owned status copy.
 pub(super) struct ListQuery {
     /// The one-based page; the storage layer checks offset representability.
     pub(super) page: usize,
+    /// The page size, one of `PAGE_SIZES`.
+    pub(super) per: usize,
+    /// Decoded search text, empty for every site.
+    pub(super) search: String,
     /// Fixed status text, never reflected query input.
     pub(super) notice: Option<&'static str>,
 }
 
 impl ListQuery {
-    /// Parses only a single page and a single recognized deletion notice.
+    /// Parses at most one each of page, size, search, and a recognized notice.
     ///
     /// # Errors
-    /// Rejects unknown/repeated fields, empty or invalid numbers, and zero.
+    /// Rejects unknown/repeated fields, invalid numbers or sizes, zero, and
+    /// malformed or non-UTF-8 search encoding.
     pub(super) fn parse(query: Option<&str>) -> Result<Self> {
-        let mut page = None;
-        let mut notice = None;
+        let (mut page, mut per, mut search, mut notice) = (None, None, None, None);
         if let Some(query) = query.filter(|query| !query.is_empty()) {
             for field in query.split('&') {
                 let (name, value) = field.split_once('=').ok_or_else(super::invalid)?;
@@ -423,6 +432,13 @@ impl ListQuery {
                         }
                         page = Some(number);
                     }
+                    "per" if per.is_none() => {
+                        let size = PAGE_SIZES
+                            .into_iter()
+                            .find(|size| size.to_string() == value);
+                        per = Some(size.ok_or_else(super::invalid)?);
+                    }
+                    "q" if search.is_none() => search = Some(decode(value)?),
                     "notice" if notice.is_none() => {
                         notice = Some(match value {
                             "deleted" => {
@@ -440,7 +456,31 @@ impl ListQuery {
         }
         Ok(Self {
             page: page.unwrap_or(1),
+            per: per.unwrap_or(PAGE_SIZES[1]),
+            search: search.unwrap_or_default(),
             notice,
         })
     }
+}
+
+/// Decodes one `application/x-www-form-urlencoded` value as UTF-8.
+fn decode(value: &str) -> Result<String> {
+    let hex = |digit: u8| char::from(digit).to_digit(16);
+    let (mut bytes, mut rest) = (Vec::with_capacity(value.len()), value.as_bytes());
+    while let [byte, tail @ ..] = rest {
+        rest = tail;
+        bytes.push(match (byte, tail) {
+            (b'+', _) => b' ',
+            (b'%', [high, low, tail @ ..]) => {
+                rest = tail;
+                let (Some(high), Some(low)) = (hex(*high), hex(*low)) else {
+                    return Err(super::invalid());
+                };
+                (high * 16 + low) as u8
+            }
+            (b'%', _) => return Err(super::invalid()),
+            _ => *byte,
+        });
+    }
+    String::from_utf8(bytes).map_err(|_| super::invalid())
 }

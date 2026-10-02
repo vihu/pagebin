@@ -128,10 +128,10 @@ async fn management_list_and_detail_escape_metadata_and_csp_allows_only_trusted_
 }
 
 #[tokio::test]
-async fn management_pagination_is_newest_first_and_rejects_ambiguous_or_unbounded_parameters() {
+async fn management_pagination_and_search_are_newest_first_and_reject_ambiguous_parameters() {
     let (app, pool, _directory) = spawn_app(Some(VIEW_HOST)).await;
     let (session, _) = publishing::login(&app).await;
-    const PAGE_SIZE: usize = 20;
+    const PAGE_SIZE: usize = 25;
     let insert = "INSERT INTO sites (slug, visibility, file_count, size_bytes, created_at, updated_at) VALUES (?, 'open', 1, 42, ?, ?)";
     for index in 0..=PAGE_SIZE {
         let (slug, stamp) = (format!("listed-{index:02}"), index as i64);
@@ -146,18 +146,39 @@ async fn management_pagination_is_newest_first_and_rejects_ambiguous_or_unbounde
     let row = |index: usize| first.find(&link(index)).unwrap();
     let positions: Vec<_> = (1..=PAGE_SIZE).rev().map(row).collect();
     assert!(positions.windows(2).all(|pair| pair[0] < pair[1]));
-    assert!(!first.contains("listed-00") && first.contains("href=\"/?page=2\""));
+    let pager = |page: usize| format!("name=\"page\" value=\"{page}\"");
+    assert!(!first.contains("listed-00") && first.contains(&pager(2)));
     let (status, _, second) = auth::send(&app, auth::get("/?page=2", &session)).await;
     assert_eq!(status, OK);
-    assert!(second.contains(&link(0)) && !second.contains("href=\"/?page=3\""));
+    assert!(second.contains(&link(0)) && second.contains(&pager(1)) && !second.contains(&pager(3)));
     assert!((1..=PAGE_SIZE).all(|index| !second.contains(&format!("listed-{index:02}"))));
-    let rejected = "page=0 page=-1 page= page=abc page=1.5 page=%2B1 page=%201 page=1&page=2 notice=unknown unknown=1 page=1&unknown=1 notice=deleted&notice=retained page=9999999999999999999999999999999999999999";
+    let title = "UPDATE sites SET title = 'Quarterly Report' WHERE slug = 'listed-05'";
+    sqlx::query(title).execute(&pool).await.unwrap();
+    let shown = |body: &str| {
+        (0..=PAGE_SIZE)
+            .filter(|i| body.contains(&link(*i)))
+            .collect::<Vec<_>>()
+    };
+    for (query, rows, next) in [
+        ("per=10", (16..=25).collect(), true),
+        ("per=50", (0..=25).collect(), false),
+        ("q=listed-1&per=10", (10..=19).collect(), false),
+        ("q=quarterly+REPORT", vec![5], false),
+        ("q=%25", vec![], false),
+    ] {
+        let (_, _, body) = auth::send(&app, auth::get(&format!("/?{query}"), &session)).await;
+        assert_eq!(
+            (shown(&body), body.contains(&pager(2))),
+            (rows, next),
+            "{query}"
+        );
+    }
+    let rejected = "page=0 page=-1 page= page=abc page=1.5 page=%2B1 page=%201 page=1&page=2 notice=unknown unknown=1 page=1&unknown=1 notice=deleted&notice=retained page=9999999999999999999999999999999999999999 per=20 per= per=10&per=25 q=%ZZ q=%F q=%FF q=a&q=b";
     for query in rejected.split(' ') {
         let page = auth::get(&format!("/?{query}"), &session);
         expect(&app, page, BAD_REQUEST).await;
     }
-    let accepted =
-        "page=1 notice=deleted notice=retained page=1&notice=deleted notice=retained&page=1";
+    let accepted = "page=1 notice=deleted notice=retained page=1&notice=deleted notice=retained&page=1 q=&per=25&page=1 q=%E2%9C%93";
     for query in accepted.split(' ') {
         let page = auth::get(&format!("/?{query}"), &session);
         expect(&app, page, OK).await;

@@ -10,19 +10,31 @@
 {% block content %}
 <div class="flex flex-wrap items-end justify-between gap-4 mt-8 mb-4">
   <div>
-    <h1>pages <span class="hint font-normal">{{ sites.len() }}{% if previous_url.is_some() || next_url.is_some() %} shown{% endif %}</span></h1>
+    <h1>pages <span class="hint font-normal">{{ sites.len() }}{% if previous_page.is_some() || next_page.is_some() || !search.is_empty() %} shown{% endif %}</span></h1>
     <p class="hint">Only you can see this list.</p>
   </div>
   <a class="btn btn-primary btn-sm" href="/new">new page</a>
 </div>
+<form class="flex flex-wrap items-center gap-2 mb-4" method="get" action="/" role="search">
+  <label class="sr-only" for="q">search pages</label>
+  <input class="input input-sm grow min-w-0 sm:max-w-xs" type="search" id="q" name="q" value="{{ search }}" placeholder="title or slug">
+  <label class="sr-only" for="per">rows per page</label>
+  <select class="select select-sm w-auto" id="per" name="per" data-autosubmit>
+    {% for size in [10, 25, 50] %}<option value="{{ size }}"{% if *size == per %} selected{% endif %}>{{ size }} rows</option>{% endfor %}
+  </select>
+  <button class="btn btn-sm" type="submit">search</button>
+</form>
 {% if let Some(message) = notice %}
 <p class="intro mb-4" role="status">{{ message }}</p>
 {% endif %}
 {% if sites.is_empty() %}
 <section class="border-y border-base-300 py-8">
-  {% if previous_url.is_some() %}
+  {% if previous_page.is_some() %}
   <h2>No pages on this page</h2>
   <p class="intro">Return to the previous page or create a new page.</p>
+  {% else if !search.is_empty() %}
+  <h2>No matching pages</h2>
+  <p class="intro">No title or slug contains “{{ search }}”.</p>
   {% else %}
   <h2>No pages yet</h2>
   <p class="intro">Paste HTML or upload files to publish your first page and get a share link.</p>
@@ -71,14 +83,18 @@
   </tbody>
 </table>
 {% endif %}
-{% if previous_url.is_some() || next_url.is_some() %}
-<nav class="flex flex-wrap gap-3 mt-6" aria-label="Site pages">
-  {% if let Some(url) = previous_url %}
-  <a class="btn btn-ghost btn-sm" href="{{ url }}" rel="prev">Previous page</a>
-  {% endif %}
-  {% if let Some(url) = next_url %}
-  <a class="btn btn-ghost btn-sm" href="{{ url }}" rel="next">Next page</a>
-  {% endif %}
+{% if previous_page.is_some() || next_page.is_some() %}
+<nav class="mt-6" aria-label="Site pages">
+  <form class="flex flex-wrap gap-3" method="get" action="/">
+    <input type="hidden" name="q" value="{{ search }}">
+    <input type="hidden" name="per" value="{{ per }}">
+    {% if let Some(page) = previous_page %}
+    <button class="btn btn-ghost btn-sm" type="submit" name="page" value="{{ page }}">Previous page</button>
+    {% endif %}
+    {% if let Some(page) = next_page %}
+    <button class="btn btn-ghost btn-sm" type="submit" name="page" value="{{ page }}">Next page</button>
+    {% endif %}
+  </form>
 </nav>
 {% endif %}
 {% endblock %}

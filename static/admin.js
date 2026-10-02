@@ -25,3 +25,8 @@ if (
     });
   }
 }
+
+// Apply a new page size without a separate submit; the button is the fallback.
+document
+  .querySelector("select[data-autosubmit]")
+  ?.addEventListener("change", (event) => event.target.form.requestSubmit());
