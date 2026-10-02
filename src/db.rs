@@ -4,7 +4,7 @@ use crate::{
     AppError, Result,
     auth::Password,
     config::validated_data_dir,
-    sites::{AccessSite, SITES_PER_PAGE, Site, SiteDetails, Slug},
+    sites::{AccessSite, Site, SiteDetails, Slug},
 };
 use sqlx::{
     ConnectOptions, SqliteConnection, SqlitePool,
@@ -154,15 +154,24 @@ pub(crate) async fn site_details(
         .await
 }
 
-/// Reads a deterministic bounded page plus one next-page sentinel row.
+/// Reads a deterministic page of title or slug matches, `limit` rows long.
+///
+/// Matching is a literal substring, case-insensitive for ASCII only.
 ///
 /// # Errors
 /// Returns a typed database failure if the query or row decoding fails.
-pub(crate) async fn list_sites(pool: &SqlitePool, offset: i64) -> sqlx::Result<Vec<SiteDetails>> {
+pub(crate) async fn list_sites(
+    pool: &SqlitePool,
+    search: &str,
+    limit: i64,
+    offset: i64,
+) -> sqlx::Result<Vec<SiteDetails>> {
     sqlx::query_as::<_, SiteDetails>(details_query!(
-        "ORDER BY created_at DESC, slug ASC LIMIT ? OFFSET ?"
+        "WHERE instr(lower(title), lower(?1)) OR instr(slug, lower(?1))
+         ORDER BY created_at DESC, slug ASC LIMIT ?2 OFFSET ?3"
     ))
-    .bind((SITES_PER_PAGE + 1) as i64)
+    .bind(search)
+    .bind(limit)
     .bind(offset)
     .fetch_all(pool)
     .await
