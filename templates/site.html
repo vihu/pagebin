@@ -137,6 +137,7 @@
     {% call inputs::content(replace_base(), replace_input, "", "", replace_error_message(), replace_invalid_field(), max_site_files()) %}{% endcall %}
     <div class="flex flex-wrap items-center gap-3">
       <button class="btn btn-primary btn-sm" type="submit">replace content</button>
+      <a class="btn btn-ghost btn-sm" href="/sites/{{ slug }}/content">download zip</a>
     </div>
   </form>
 </div>

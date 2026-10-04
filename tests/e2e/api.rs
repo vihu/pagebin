@@ -116,6 +116,11 @@ async fn api_create_replace_patch_delete_roundtrip() {
     assert_eq!(site["size_bytes"], REPLACED.len());
     let (status, _, body) = auth::send(&api, publishing::viewer("/s/notes/")).await;
     assert_eq!((status, body.as_bytes()), (StatusCode::OK, REPLACED));
+    let request = bearer(call(Method::GET, "/api/sites/notes/content", None), TOKEN);
+    let files = crate::zip::download(&api, request, "notes").await;
+    assert_eq!(files["index.html"], REPLACED);
+    let request = bearer(call(Method::GET, "/api/sites/absent/content", None), TOKEN);
+    assert_eq!(json(&api, request).await.0, StatusCode::NOT_FOUND);
     let (status, _) = json(&api, form(Method::PUT, "/api/sites/absent", &replacement)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     let protect = r#"{"title":"Private notes","visibility":"password","password":"synthetic-site-password","expires_in":"never"}"#;
