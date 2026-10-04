@@ -1,9 +1,13 @@
-//! Bounded ZIP extraction into memory; archives never touch storage directly.
+//! Bounded ZIP extraction into memory and packing of installed content.
 
 use super::{InputError, MAX_SITE_FILES, SitePath, UploadedFile};
 use axum::body::Bytes;
-use std::io::{Cursor, Read};
-use zip::ZipArchive;
+use std::{
+    fs::{self, File},
+    io::{self, Cursor, Read},
+    path::Path,
+};
+use zip::{ZipArchive, ZipWriter, result::ZipResult, write::SimpleFileOptions};
 
 /// Unpacks regular files whose declared sizes fit within `cap` bytes in total.
 ///
@@ -56,6 +60,31 @@ pub(super) fn extract(
     }
     strip_shared_directory(&mut files);
     Ok(files)
+}
+
+/// Packs every regular file under `root` with root-relative names.
+///
+/// Symlinks and other special files are skipped, never followed.
+///
+/// # Errors
+/// Returns filesystem or archive write failures.
+pub(super) fn pack(root: &Path) -> ZipResult<Vec<u8>> {
+    let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+    let mut pending = vec![root.to_owned()];
+    while let Some(directory) = pending.pop() {
+        for entry in fs::read_dir(directory)? {
+            let path = entry?.path();
+            let kind = fs::symlink_metadata(&path)?.file_type();
+            if kind.is_dir() {
+                pending.push(path);
+            } else if kind.is_file() {
+                let name = path.strip_prefix(root).map_err(io::Error::other)?;
+                writer.start_file(name.to_string_lossy(), SimpleFileOptions::default())?;
+                io::copy(&mut File::open(&path)?, &mut writer)?;
+            }
+        }
+    }
+    Ok(writer.finish()?.into_inner())
 }
 
 /// Strips one directory that every file shares, the shape `zip -r` produces.

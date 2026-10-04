@@ -213,6 +213,23 @@ impl Sites {
         .await
     }
 
+    /// Packs current content as a ZIP while no mutation can swap it.
+    ///
+    /// # Errors
+    /// Returns a safe operational error for database or storage failures.
+    pub(crate) async fn archive(&self, slug: &Slug) -> Result<Option<Vec<u8>>> {
+        let _mutation = self.mutation.lock().await;
+        if self.get(slug).await?.is_none() {
+            return Ok(None);
+        }
+        let directory = self.directory(slug);
+        tokio::task::spawn_blocking(move || archive::pack(&directory))
+            .await
+            .map_err(AppError::publishing)?
+            .map(Some)
+            .map_err(AppError::publishing)
+    }
+
     /// Returns the content directory for an already validated slug.
     pub(crate) fn directory(&self, slug: &Slug) -> PathBuf {
         self.data_root.join("sites").join(slug.as_str())

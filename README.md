@@ -76,7 +76,8 @@ curl -sS -H "Authorization: Bearer $PAGEBIN_API_TOKEN" \
 
 `POST /api/sites` and `PUT /api/sites/{slug}` take the create form's multipart fields: `html`, `files[]`, or `zip`, plus the settings.
 `PATCH /api/sites/{slug}` takes JSON with any of `title`, `entry`, `visibility`, `password`, `expires_in`.
-`DELETE /api/sites/{slug}` returns 204. `GET /api/sites` lists every site. Errors are `{"error": "..."}`.
+`DELETE /api/sites/{slug}` returns 204. `GET /api/sites` lists every site. `GET /api/sites/{slug}/content` returns its files as a ZIP.
+Errors are `{"error": "..."}`.
 
 ## Non-goals
 

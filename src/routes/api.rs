@@ -1,6 +1,10 @@
 //! Bearer-token JSON API on the admin host, sharing the native form readers.
 
-use super::{publishing::PublishingState, settings, upload::PublishingForm};
+use super::{
+    publishing::{self, PublishingState},
+    settings,
+    upload::PublishingForm,
+};
 use crate::{
     AppError, Result,
     auth::Password,
@@ -34,6 +38,7 @@ pub(super) fn router(state: PublishingState, token: Option<String>) -> Router {
             "/api/sites/{slug}",
             put(replace).patch(update).delete(delete),
         )
+        .route("/api/sites/{slug}/content", get(publishing::content))
         .layer(DefaultBodyLimit::max(state.max_upload_bytes))
         .layer(middleware::from_fn_with_state(token, require_token))
         .layer(middleware::from_fn(json_errors))

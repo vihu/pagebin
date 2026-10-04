@@ -2,14 +2,20 @@
 
 use crate::{TEST_UPLOAD_MB, VIEW_HOST, auth, publishing, spawn_app};
 use axum::{
-    body::Body,
-    http::{Request, StatusCode, header::LOCATION},
+    Router,
+    body::{Body, to_bytes},
+    http::{
+        Request, StatusCode,
+        header::{CONTENT_DISPOSITION, CONTENT_TYPE, LOCATION},
+    },
 };
 use std::{
+    collections::BTreeMap,
     fs,
-    io::{Cursor, Write},
+    io::{Cursor, Read, Write},
 };
-use zip::{CompressionMethod, ZipWriter, write::SimpleFileOptions};
+use tower::ServiceExt;
+use zip::{CompressionMethod, ZipArchive, ZipWriter, write::SimpleFileOptions};
 
 const INDEX: &[u8] = b"<!doctype html><link rel=stylesheet href=css/style.css><h1>Zipped</h1>";
 const CSS: &[u8] = b"h1 { color: rebeccapurple }";
@@ -116,6 +122,51 @@ async fn zip_with_nested_dirs_and_top_level_dir_stripped_serves_relative_assets(
     let request = auth::post("/sites/zipped/delete", &session, &confirm);
     assert_eq!(auth::send(&app, request).await.0, StatusCode::SEE_OTHER);
     assert!(!directory.path().join("sites/zipped").exists());
+    pool.close().await;
+}
+
+/// Sends a download request and returns the attachment's entries by name.
+pub(super) async fn download(
+    app: &Router,
+    request: Request<Body>,
+    slug: &str,
+) -> BTreeMap<String, Vec<u8>> {
+    let response = app.clone().oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.headers()[CONTENT_TYPE], "application/zip");
+    let disposition = format!("attachment; filename=\"{slug}.zip\"");
+    assert_eq!(
+        response.headers()[CONTENT_DISPOSITION],
+        disposition.as_str()
+    );
+    let body = to_bytes(response.into_body(), UPLOAD_BYTES).await.unwrap();
+    let mut archive = ZipArchive::new(Cursor::new(body)).unwrap();
+    (0..archive.len())
+        .map(|index| {
+            let mut file = archive.by_index(index).unwrap();
+            let mut content = Vec::new();
+            file.read_to_end(&mut content).unwrap();
+            (file.name().to_owned(), content)
+        })
+        .collect()
+}
+
+#[tokio::test]
+async fn zip_download_round_trips_current_content_for_the_admin_only() {
+    let (app, pool, _directory) = spawn_app(Some(VIEW_HOST)).await;
+    let (session, token) = publishing::login(&app).await;
+    let entries = [("index.html", INDEX), ("css/style.css", CSS)];
+    let request = publish(&session, &token, "fetched", &archive(&entries, None), "");
+    assert_eq!(auth::send(&app, request).await.0, StatusCode::SEE_OTHER);
+    let request = auth::get("/sites/fetched/content", &session);
+    let files = download(&app, request, "fetched").await;
+    let expected = entries.map(|(name, bytes)| (name.to_owned(), bytes.to_vec()));
+    assert_eq!(files, BTreeMap::from(expected));
+    let (status, headers, _) = auth::send(&app, auth::get("/sites/fetched/content", "")).await;
+    assert_eq!(status, StatusCode::SEE_OTHER);
+    assert_eq!(headers[LOCATION], "/login");
+    let request = auth::get("/sites/missing/content", &session);
+    assert_eq!(auth::send(&app, request).await.0, StatusCode::NOT_FOUND);
     pool.close().await;
 }
 

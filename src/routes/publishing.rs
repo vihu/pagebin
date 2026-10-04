@@ -13,7 +13,10 @@ use askama::Template;
 use axum::{
     Router,
     extract::{DefaultBodyLimit, Path, Request, State},
-    http::{HeaderMap, StatusCode, Uri},
+    http::{
+        HeaderMap, StatusCode, Uri,
+        header::{CONTENT_DISPOSITION, CONTENT_TYPE},
+    },
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
 };
@@ -26,7 +29,7 @@ pub(super) fn router(state: PublishingState) -> Router {
     Router::new()
         .route("/new", get(new_site))
         .route("/sites", post(create))
-        .route("/sites/{slug}/content", post(replace))
+        .route("/sites/{slug}/content", get(download).post(replace))
         .layer(DefaultBodyLimit::max(state.max_upload_bytes))
         .with_state(state)
 }
@@ -298,6 +301,46 @@ impl NewPage<'_> {
             _ => true,
         }
     }
+}
+
+/// Sends the current content as a ZIP attachment to the administrator.
+///
+/// # Errors
+/// Returns session, database, or storage failures.
+async fn download(
+    state: State<PublishingState>,
+    raw_slug: Path<String>,
+    headers: HeaderMap,
+) -> Result<Response> {
+    if admin::session(&headers, &state.auth)?.is_none() {
+        return Ok(Redirect::to("/login").into_response());
+    }
+    content(state, raw_slug).await
+}
+
+/// Sends the current content as a ZIP attachment; callers authenticate first.
+///
+/// # Errors
+/// Returns database or storage failures.
+pub(super) async fn content(
+    State(state): State<PublishingState>,
+    Path(raw_slug): Path<String>,
+) -> Result<Response> {
+    let Ok(slug) = Slug::parse(&raw_slug) else {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    };
+    let Some(zip) = state.sites.archive(&slug).await? else {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    };
+    let disposition = format!("attachment; filename=\"{}.zip\"", slug.as_str());
+    Ok((
+        [
+            (CONTENT_TYPE, "application/zip".to_owned()),
+            (CONTENT_DISPOSITION, disposition),
+        ],
+        zip,
+    )
+        .into_response())
 }
 
 /// Replaces content in place, keeping the slug, title, access, and expiry.
